@@ -1022,6 +1022,23 @@ btnCmp.addEventListener("click", () => {
   document.getElementById("stage").classList.toggle("compare", compare);
 });
 
+// ── Hash deep-link (e.g., #cat or #snake) ───────────────
+function applyHash(){
+  const h = (location.hash || "").slice(1);
+  if (h && I18N.ja["a_" + h]){
+    current = "a_" + h;
+  }
+  // Also accept #en for language
+  const params = new URLSearchParams(location.search);
+  if (params.get("lang") === "en"){
+    lang = "en";
+    document.getElementById("langEn").classList.add("on");
+    document.getElementById("langJa").classList.remove("on");
+  }
+}
+window.addEventListener("hashchange", () => { applyHash(); renderPicker(); renderFact(); });
+applyHash();
+
 // ── Init ───────────────────────────────────────────────
 applyLang();
 fitDisplay();
