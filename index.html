@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0e1726">
+<title>どうぶつの め — Through Animal Eyes</title>
+<meta name="description" content="ネコ・ハチ・ヘビ・フクロウ・ハエ — どうぶつ には せかい が どう みえている？ 5〜10さい むけ ビジョン・ラボ。">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --bg: #0e1726;
+  --bg2: #142036;
+  --panel: #1b2942;
+  --ink: #f4f1ea;
+  --dim: #94a3b8;
+  --accent: #f7c948;
+  --accent2: #ef8e6c;
+}
+html, body { height:100%; overflow:hidden; overscroll-behavior:none; }
+body {
+  background: linear-gradient(170deg, var(--bg) 0%, var(--bg2) 100%);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+  display:flex; flex-direction:column;
+  height: 100dvh;
+  user-select:none; -webkit-user-select:none;
+  touch-action: manipulation;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ── Top bar ── */
+.topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 10px 14px 6px;
+  flex-shrink:0;
+}
+.title {
+  font-size: 17px; font-weight:700; letter-spacing:0.5px;
+  display:flex; align-items:center; gap:8px;
+}
+.title .eye { font-size:20px; }
+.lang {
+  display:flex; gap:2px; background: rgba(255,255,255,0.05);
+  border-radius:8px; padding:3px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.lang button {
+  background:transparent; border:none; color:var(--dim);
+  font-size:11px; font-weight:700; letter-spacing:0.4px;
+  padding: 4px 9px; border-radius:5px; cursor:pointer;
+}
+.lang button.on { background: var(--accent); color:#222; }
+
+/* ── Stage ── */
+.stage {
+  flex: 1 1 auto;
+  position:relative;
+  margin: 4px 12px;
+  border-radius: 18px;
+  overflow:hidden;
+  background:#000;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.05);
+  min-height: 0;
+}
+.stage canvas {
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  display:block;
+}
+.stage .compare-line {
+  position:absolute; top:0; bottom:0; left:50%;
+  width:2px; background: rgba(255,255,255,0.7);
+  pointer-events:none;
+  display:none;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+.stage.compare .compare-line { display:block; }
+.stage .compare-label {
+  position:absolute; top:8px;
+  font-size:10px; font-weight:700; letter-spacing:0.6px;
+  background: rgba(0,0,0,0.55); color:#fff;
+  padding: 4px 8px; border-radius:6px;
+  pointer-events:none;
+  display:none;
+}
+.stage.compare .compare-label { display:block; }
+.compare-label.left  { left: 8px; }
+.compare-label.right { right: 8px; }
+
+.cam-prompt {
+  position:absolute; inset:0;
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  gap:14px; padding: 20px;
+  text-align:center;
+  background: linear-gradient(180deg, rgba(0,0,0,0.65), rgba(0,0,0,0.85));
+  backdrop-filter: blur(4px);
+}
+.cam-prompt.show { display:flex; }
+.cam-prompt h3 { font-size:18px; font-weight:700; }
+.cam-prompt p  { font-size:13px; color:#cbd5e1; line-height:1.6; max-width: 320px; }
+.cam-prompt button {
+  background: var(--accent); color:#222;
+  border:none; border-radius: 999px;
+  padding: 11px 22px; font-size:14px; font-weight:700;
+  cursor:pointer;
+  box-shadow: 0 6px 18px rgba(247,201,72,0.35);
+}
+
+/* ── Fact ── */
+.fact {
+  flex-shrink:0;
+  margin: 8px 14px 4px;
+  padding: 10px 14px;
+  background: var(--panel);
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.06);
+  min-height: 60px;
+}
+.fact .name {
+  font-size: 13px; font-weight:700;
+  color: var(--accent);
+  letter-spacing: 0.4px;
+  margin-bottom: 3px;
+}
+.fact .body { font-size: 12.5px; line-height:1.55; color: #d8e0ee; }
+
+/* ── Animal picker ── */
+.picker {
+  flex-shrink:0;
+  display:flex; gap:8px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  padding: 8px 14px 4px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.picker::-webkit-scrollbar { display:none; }
+.animal-btn {
+  flex: 0 0 auto;
+  min-width: 64px;
+  padding: 8px 8px 6px;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+  scroll-snap-align: start;
+  display:flex; flex-direction:column; align-items:center; gap:1px;
+  transition: transform 0.12s, background 0.15s, border-color 0.15s;
+}
+.animal-btn .emoji { font-size: 26px; line-height:1; }
+.animal-btn .lab   { font-size: 10.5px; font-weight:600; color:#cbd5e1; letter-spacing: 0.3px; }
+.animal-btn:active { transform: scale(0.94); }
+.animal-btn.on {
+  background: linear-gradient(135deg, rgba(247,201,72,0.25), rgba(239,142,108,0.18));
+  border-color: var(--accent);
+}
+.animal-btn.on .lab { color: var(--accent); }
+
+/* ── Toolbar ── */
+.toolbar {
+  flex-shrink:0;
+  display:flex; gap:8px;
+  padding: 4px 14px 12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.tool-btn {
+  flex: 1 1 auto;
+  min-height: 40px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px; font-weight:600;
+  padding: 7px 10px;
+  cursor: pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  transition: background 0.12s, border-color 0.12s;
+}
+.tool-btn:active { background: rgba(255,255,255,0.13); }
+.tool-btn.on {
+  background: rgba(247,201,72,0.18);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tool-btn .ic { font-size:15px; }
+
+.foot {
+  flex-shrink:0;
+  text-align:center;
+  font-size: 10px; color: rgba(255,255,255,0.32);
+  padding: 0 12px 8px;
+  letter-spacing: 0.3px;
+}
+
+/* hidden canvases */
+.hidden { display:none !important; }
+
+@media (min-width: 720px) {
+  .title { font-size: 19px; }
+  .fact .body { font-size: 13.5px; }
+  .animal-btn { min-width: 78px; padding: 10px 10px 8px; }
+  .animal-btn .emoji { font-size: 30px; }
+  .animal-btn .lab { font-size: 11.5px; }
+  .stage { margin: 6px 18px; border-radius: 22px; }
+  .fact { margin: 10px 18px 4px; }
+  .picker { padding: 10px 18px 6px; }
+  .toolbar { padding: 6px 18px 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="title"><span class="eye">👁️</span><span data-i18n="title">どうぶつの め</span></div>
+  <div class="lang">
+    <button id="langJa" class="on">JA</button>
+    <button id="langEn">EN</button>
+  </div>
+</div>
+
+<div class="stage" id="stage">
+  <canvas id="display"></canvas>
+  <div class="compare-line"></div>
+  <div class="compare-label left"  data-i18n="cmpLeft">ヒト</div>
+  <div class="compare-label right" data-i18n="cmpRight">どうぶつ</div>
+  <div class="cam-prompt" id="camPrompt">
+    <h3 data-i18n="camTitle">カメラを ひらく？</h3>
+    <p  data-i18n="camDesc">いま みえているもの が、どうぶつ の めには どう うつるか リアルタイムで しらべよう。<br>えいぞう は はしりません。きろくも しません。</p>
+    <button id="camStart" data-i18n="camStart">カメラを はじめる</button>
+    <button id="camCancel" style="background:transparent;color:#94a3b8;font-weight:600;border:1px solid #334155;" data-i18n="camCancel">キャンセル</button>
+  </div>
+</div>
+
+<div class="fact">
+  <div class="name" id="factName">ヒト の め</div>
+  <div class="body" id="factBody">赤・緑・青の3色をみる「3色型」。色がよく分かるけど、夜は弱い。</div>
+</div>
+
+<div class="picker" id="picker"></div>
+
+<div class="toolbar">
+  <button class="tool-btn on" id="srcSample"><span class="ic">🌷</span><span data-i18n="srcSample">サンプル</span></button>
+  <button class="tool-btn"    id="srcCamera"><span class="ic">📷</span><span data-i18n="srcCamera">カメラ</span></button>
+  <button class="tool-btn"    id="cmpToggle"><span class="ic">⇄</span><span data-i18n="cmpBtn">くらべる</span></button>
+</div>
+
+<div class="foot">
+  <span data-i18n="foot">1まい HTML、ライブラリなし、データはローカルのみ・Pinda Lab</span>
+</div>
+
+<canvas id="work"  class="hidden"></canvas>
+<canvas id="warm"  class="hidden"></canvas>
+<canvas id="uv"    class="hidden"></canvas>
+<canvas id="scene" class="hidden"></canvas>
+<video  id="video" class="hidden" playsinline muted></video>
+
+<script>
+"use strict";
+
+// ── i18n ────────────────────────────────────────────────
+const I18N = {
+  ja: {
+    title:   "どうぶつの め",
+    cmpLeft: "ヒト", cmpRight: "どうぶつ",
+    camTitle: "カメラを ひらく？",
+    camDesc:  "いま みえているもの が、どうぶつ の めには どう うつるか リアルタイムで しらべよう。<br>えいぞう は はしりません。きろくも しません。",
+    camStart: "カメラを はじめる",
+    camCancel:"キャンセル",
+    srcSample:"サンプル", srcCamera:"カメラ", cmpBtn:"くらべる",
+    foot: "1まい HTML、ライブラリなし、データはローカルのみ・Pinda Lab",
+    a_human:  { name:"ヒト の め",       fact:"赤・緑・青の3色をみる「3色型」。色は よく わかるけど、よる は よわい。", lab:"ヒト" },
+    a_cat:    { name:"ネコ の め",       fact:"あお と きいろ は わかるけど、あか と みどり は にた いろに みえる「2色型」。よる は ヒトの 6ばい よく みえる。", lab:"ネコ" },
+    a_dog:    { name:"イヌ の め",       fact:"ネコ と にた「2色型」。あおと きいろ は わかるけど、みどりの くさ の なかの あかい ボール は みつけにくい。", lab:"イヌ" },
+    a_bee:    { name:"ハチ の め",       fact:"しがいせん（むらさきのさきの ひかり）が みえる。はな には ハチだけに みえる「みつ の みち」もよう が ある。", lab:"ハチ" },
+    a_bird:   { name:"トリ の め",       fact:"4色型。しがいせん + あか・みどり・あお。とおく の ちいさな むしも くっきり みえて、いろが ヒトより こく みえる。", lab:"トリ" },
+    a_snake:  { name:"ヘビ の め",       fact:"めの した の「ピットきかん」で あたたかさ を みる。あたたかい どうぶつ は やみの なかでも ひかって みえる。", lab:"ヘビ" },
+    a_fly:    { name:"ハエ の め",       fact:"4000こ も あつまった「ふくがん」。うごきには とても さとい けど、え は モザイクみたい に つぶつぶ。", lab:"ハエ" },
+    a_owl:    { name:"フクロウ の め",   fact:"おおきな めで つきあかり でも みえる。いろは すくなく、ほぼ モノクロ。とても ひくい ひかり に つよい。", lab:"フクロウ" }
+  },
+  en: {
+    title:   "Through Animal Eyes",
+    cmpLeft: "Human", cmpRight: "Animal",
+    camTitle: "Open the camera?",
+    camDesc:  "See what's around you through animal eyes — live.<br>Nothing leaves the device. No recording.",
+    camStart: "Start camera",
+    camCancel:"Cancel",
+    srcSample:"Garden", srcCamera:"Camera", cmpBtn:"Compare",
+    foot: "Single HTML · no libraries · all on-device · Pinda Lab",
+    a_human:  { name:"Human eye",        fact:"Trichromatic — three color cones (R/G/B). Sharp color, but weak at night.", lab:"Human" },
+    a_cat:    { name:"Cat eye",          fact:"Dichromatic — sees blues and yellows; confuses red with green. Sees ~6× better than us in dim light.", lab:"Cat" },
+    a_dog:    { name:"Dog eye",          fact:"Dichromatic like a cat. Red ball on green grass? Tough to find.", lab:"Dog" },
+    a_bee:    { name:"Bee eye",          fact:"Sees ultraviolet beyond violet. Many flowers wear hidden UV \"nectar guides\" only bees see.", lab:"Bee" },
+    a_bird:   { name:"Bird eye",         fact:"Tetrachromatic — UV plus R/G/B. Spots tiny insects far away; colors look richer than to us.", lab:"Bird" },
+    a_snake:  { name:"Snake eye",        fact:"Pit organs sense heat. Warm-blooded animals glow in the dark.", lab:"Snake" },
+    a_fly:    { name:"Fly eye",          fact:"Compound eye — ~4,000 facets. Detects motion in milliseconds; the picture is mosaic-like.", lab:"Fly" },
+    a_owl:    { name:"Owl eye",          fact:"Huge eyes for moonlight. Mostly grayscale, exceptional in low light.", lab:"Owl" }
+  }
+};
+
+let lang = "ja";
+const ANIMALS = [
+  { id:"a_human", emoji:"🧒" },
+  { id:"a_cat",   emoji:"🐱" },
+  { id:"a_dog",   emoji:"🐶" },
+  { id:"a_bee",   emoji:"🐝" },
+  { id:"a_bird",  emoji:"🐦" },
+  { id:"a_snake", emoji:"🐍" },
+  { id:"a_fly",   emoji:"🪰" },
+  { id:"a_owl",   emoji:"🦉" }
+];
+
+let current = "a_human";
+let source  = "sample"; // "sample" | "camera"
+let compare = false;
+let stream  = null;
+let rafId   = 0;
+
+// ── Setup canvases ──────────────────────────────────────
+const display = document.getElementById("display");
+const work    = document.getElementById("work");
+const warm    = document.getElementById("warm");
+const uv      = document.getElementById("uv");
+const scene   = document.getElementById("scene");
+const video   = document.getElementById("video");
+
+const dctx = display.getContext("2d");
+const wctx = work.getContext("2d", { willReadFrequently:true });
+const tctx = warm.getContext("2d");
+const uctx = uv.getContext("2d");
+const sctx = scene.getContext("2d");
+
+// internal working resolution
+const W = 480, H = 360;
+work.width = W; work.height = H;
+warm.width = W; warm.height = H;
+uv.width   = W; uv.height   = H;
+scene.width= W; scene.height= H;
+
+function fitDisplay(){
+  const stage = document.getElementById("stage");
+  const r = stage.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  display.width  = Math.floor(r.width  * dpr);
+  display.height = Math.floor(r.height * dpr);
+}
+
+window.addEventListener("resize", () => { fitDisplay(); });
+
+// ── Build animal picker ─────────────────────────────────
+const picker = document.getElementById("picker");
+function renderPicker(){
+  picker.innerHTML = "";
+  for (const a of ANIMALS){
+    const t = I18N[lang][a.id];
+    const b = document.createElement("button");
+    b.className = "animal-btn" + (a.id === current ? " on" : "");
+    b.dataset.id = a.id;
+    b.innerHTML = `<span class="emoji">${a.emoji}</span><span class="lab">${t.lab}</span>`;
+    b.addEventListener("click", () => {
+      current = a.id;
+      renderPicker();
+      renderFact();
+      const el = b;
+      el.scrollIntoView({ behavior:"smooth", inline:"center", block:"nearest" });
+    });
+    picker.appendChild(b);
+  }
+}
+
+function renderFact(){
+  const t = I18N[lang][current];
+  document.getElementById("factName").textContent = t.name;
+  document.getElementById("factBody").textContent = t.fact;
+}
+
+// ── i18n apply ──────────────────────────────────────────
+function applyLang(){
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const k = el.dataset.i18n;
+    if (I18N[lang][k] !== undefined){
+      if (k === "camDesc") el.innerHTML = I18N[lang][k];
+      else el.textContent = I18N[lang][k];
+    }
+  });
+  renderPicker();
+  renderFact();
+}
+document.getElementById("langJa").addEventListener("click", () => {
+  lang="ja";
+  document.getElementById("langJa").classList.add("on");
+  document.getElementById("langEn").classList.remove("on");
+  applyLang();
+});
+document.getElementById("langEn").addEventListener("click", () => {
+  lang="en";
+  document.getElementById("langEn").classList.add("on");
+  document.getElementById("langJa").classList.remove("on");
+  applyLang();
+});
+
+// ── Sample garden scene generator ───────────────────────
+const gardenItems = [];
+function buildGarden(){
+  gardenItems.length = 0;
+  // Flowers (different species — yellow, pink, white) with UV patterns and warmth
+  // Each has center x,y and "uv pattern" rings; pinks and yellows are slightly warm
+  gardenItems.push({ kind:"flower", x:80,  y:240, hue:50,  size:34, uvScale:1.1 });
+  gardenItems.push({ kind:"flower", x:170, y:265, hue:340, size:30, uvScale:0.7 });
+  gardenItems.push({ kind:"flower", x:130, y:290, hue:50,  size:24, uvScale:0.9 });
+  gardenItems.push({ kind:"flower", x:280, y:235, hue:30,  size:32, uvScale:1.2 });
+  gardenItems.push({ kind:"flower", x:380, y:280, hue:280, size:28, uvScale:0.8 });
+  gardenItems.push({ kind:"flower", x:430, y:255, hue:0,   size:30, uvScale:1.0 });
+  gardenItems.push({ kind:"flower", x:340, y:300, hue:50,  size:22, uvScale:0.7 });
+  // Mouse — warm body
+  gardenItems.push({ kind:"mouse", x:220, y:320, t:0 });
+  // Butterfly — slightly warm wings
+  gardenItems.push({ kind:"butterfly", x:340, y:120, t:0 });
+  // Bird high up
+  gardenItems.push({ kind:"bird", x:430, y:60, t:0 });
+}
+buildGarden();
+
+function drawSampleScene(time){
+  // Sky gradient (sun position pulses gently)
+  const t = time * 0.0008;
+  const sunY = 60 + Math.sin(t*0.3) * 8;
+  const g = sctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,   "#88c4e8");
+  g.addColorStop(0.55,"#cfe7d8");
+  g.addColorStop(1,   "#7e9b5a");
+  sctx.fillStyle = g; sctx.fillRect(0,0,W,H);
+
+  // Sun (warm)
+  const sx = 380, sy = sunY;
+  const sg = sctx.createRadialGradient(sx,sy,4, sx,sy,50);
+  sg.addColorStop(0, "#fff7c8");
+  sg.addColorStop(0.5,"#ffd66e");
+  sg.addColorStop(1, "rgba(255,212,110,0)");
+  sctx.fillStyle = sg; sctx.beginPath(); sctx.arc(sx,sy,50,0,Math.PI*2); sctx.fill();
+
+  // Distant hills
+  sctx.fillStyle = "#9bb38a";
+  sctx.beginPath(); sctx.moveTo(0,210);
+  sctx.bezierCurveTo(120,170, 220,220, 340,200);
+  sctx.bezierCurveTo(420,190, 460,210, W,200);
+  sctx.lineTo(W,260); sctx.lineTo(0,260); sctx.fill();
+
+  // Tree (left)
+  sctx.fillStyle = "#5a4836";
+  sctx.fillRect(45,180,12,55);
+  sctx.fillStyle = "#5d8a4f";
+  sctx.beginPath(); sctx.arc(51,170,32,0,Math.PI*2); sctx.fill();
+  sctx.beginPath(); sctx.arc(70,180,22,0,Math.PI*2); sctx.fill();
+  sctx.beginPath(); sctx.arc(32,180,22,0,Math.PI*2); sctx.fill();
+
+  // Ground / grass band
+  const gg = sctx.createLinearGradient(0,260,0,H);
+  gg.addColorStop(0,"#7a9d51"); gg.addColorStop(1,"#56773a");
+  sctx.fillStyle = gg; sctx.fillRect(0,260,W,H-260);
+  // grass blades
+  sctx.strokeStyle = "#4f7234"; sctx.lineWidth = 1;
+  for (let i=0;i<60;i++){
+    const x = (i*8.1) % W, y = 270 + (i%5)*18;
+    sctx.beginPath(); sctx.moveTo(x,y); sctx.lineTo(x-2,y-7); sctx.stroke();
+    sctx.beginPath(); sctx.moveTo(x+3,y); sctx.lineTo(x+5,y-9); sctx.stroke();
+  }
+
+  // Flowers
+  for (const it of gardenItems){
+    if (it.kind !== "flower") continue;
+    drawFlower(sctx, it.x, it.y, it.hue, it.size, time);
+  }
+  // Butterfly
+  const bf = gardenItems.find(i=>i.kind==="butterfly");
+  if (bf){ bf.t = time; drawButterfly(sctx, bf.x + Math.sin(time*0.001)*40, bf.y + Math.cos(time*0.0007)*15, time); }
+  // Mouse
+  const ms = gardenItems.find(i=>i.kind==="mouse");
+  if (ms){ ms.t = time; drawMouse(sctx, ms.x + Math.sin(time*0.0006)*14, ms.y, time); }
+  // Bird
+  const bd = gardenItems.find(i=>i.kind==="bird");
+  if (bd){ drawBird(sctx, bd.x - (time*0.04 % 480), bd.y, time); drawBird(sctx, bd.x - (time*0.04 % 480) + 480, bd.y, time); }
+}
+
+function drawFlower(ctx, x, y, hue, size, time){
+  const sway = Math.sin(time*0.0015 + x*0.02) * 2;
+  // Stem
+  ctx.strokeStyle = "#3e6b2e"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x,y+size); ctx.quadraticCurveTo(x+sway, y+size*0.5, x+sway, y); ctx.stroke();
+  // Leaf
+  ctx.fillStyle = "#4f7e3a";
+  ctx.beginPath();
+  ctx.ellipse(x-6+sway*0.4, y+size*0.7, 7, 4, -0.5, 0, Math.PI*2);
+  ctx.fill();
+  // Petals
+  const petals = 6;
+  ctx.save();
+  ctx.translate(x+sway, y);
+  for (let i=0;i<petals;i++){
+    const a = (i/petals) * Math.PI * 2;
+    const px = Math.cos(a)*size*0.45;
+    const py = Math.sin(a)*size*0.45;
+    ctx.fillStyle = `hsl(${hue}, 75%, 65%)`;
+    ctx.beginPath(); ctx.ellipse(px, py, size*0.32, size*0.22, a, 0, Math.PI*2); ctx.fill();
+  }
+  // Center
+  ctx.fillStyle = `hsl(${(hue+30)%360}, 80%, 38%)`;
+  ctx.beginPath(); ctx.arc(0,0, size*0.18, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawButterfly(ctx, x, y, time){
+  const flap = Math.sin(time*0.012);
+  ctx.save(); ctx.translate(x,y);
+  // Body
+  ctx.fillStyle = "#222"; ctx.fillRect(-1, -8, 2, 16);
+  // Wings
+  for (const side of [-1,1]){
+    ctx.save(); ctx.scale(side,1);
+    ctx.fillStyle = "#ef8e6c";
+    const wingW = 18 + flap*2;
+    ctx.beginPath();
+    ctx.moveTo(0,-6);
+    ctx.bezierCurveTo(wingW*0.3,-14, wingW,-10, wingW*0.9,-2);
+    ctx.bezierCurveTo(wingW,4, wingW*0.4,9, 0,3);
+    ctx.fill();
+    ctx.fillStyle = "#fff7c8";
+    ctx.beginPath(); ctx.arc(wingW*0.55, -4, 3, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawMouse(ctx, x, y, time){
+  const wig = Math.sin(time*0.005) * 1.5;
+  ctx.save(); ctx.translate(x,y);
+  // Body
+  ctx.fillStyle = "#d8c7a3";
+  ctx.beginPath(); ctx.ellipse(0,0,14,8,0,0,Math.PI*2); ctx.fill();
+  // Head
+  ctx.beginPath(); ctx.arc(-12, -2, 6, 0, Math.PI*2); ctx.fill();
+  // Ear
+  ctx.fillStyle = "#c5b48e";
+  ctx.beginPath(); ctx.arc(-14, -7, 3.5, 0, Math.PI*2); ctx.fill();
+  // Tail
+  ctx.strokeStyle = "#b8a78a"; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(13,0); ctx.quadraticCurveTo(20,wig,26,-wig*2); ctx.stroke();
+  // Eye
+  ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(-14,-3,0.9,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawBird(ctx, x, y, time){
+  const flap = Math.sin(time*0.01) * 4;
+  ctx.strokeStyle = "#222"; ctx.lineWidth = 2; ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(x-10, y+flap); ctx.quadraticCurveTo(x-3, y-3, x, y);
+  ctx.quadraticCurveTo(x+3, y-3, x+10, y+flap);
+  ctx.stroke();
+}
+
+// ── Warmth & UV layers ─────────────────────────────────
+// warmth: grayscale where bright = warm, drawn for sample scene
+function drawWarmthLayer(time){
+  tctx.fillStyle = "#000"; tctx.fillRect(0,0,W,H);
+  // Sun — very warm
+  const sx = 380, sy = 60;
+  const sg = tctx.createRadialGradient(sx,sy,4, sx,sy,55);
+  sg.addColorStop(0,"rgba(255,255,255,1)");
+  sg.addColorStop(1,"rgba(255,255,255,0)");
+  tctx.fillStyle = sg; tctx.beginPath(); tctx.arc(sx,sy,55,0,Math.PI*2); tctx.fill();
+  // Mouse — warm body
+  const ms = gardenItems.find(i=>i.kind==="mouse");
+  if (ms){
+    const x = ms.x + Math.sin(time*0.0006)*14, y = ms.y;
+    const mg = tctx.createRadialGradient(x,y,2, x,y,18);
+    mg.addColorStop(0,"rgba(255,255,255,0.95)");
+    mg.addColorStop(1,"rgba(255,255,255,0)");
+    tctx.fillStyle = mg; tctx.beginPath(); tctx.arc(x,y,18,0,Math.PI*2); tctx.fill();
+  }
+  // Butterfly — slightly warm
+  const bf = gardenItems.find(i=>i.kind==="butterfly");
+  if (bf){
+    const x = bf.x + Math.sin(time*0.001)*40, y = bf.y + Math.cos(time*0.0007)*15;
+    const bg = tctx.createRadialGradient(x,y,1, x,y,14);
+    bg.addColorStop(0,"rgba(180,180,180,0.9)");
+    bg.addColorStop(1,"rgba(0,0,0,0)");
+    tctx.fillStyle = bg; tctx.beginPath(); tctx.arc(x,y,14,0,Math.PI*2); tctx.fill();
+  }
+  // Bird
+  const bd = gardenItems.find(i=>i.kind==="bird");
+  if (bd){
+    const x1 = bd.x - (time*0.04 % 480);
+    const x2 = x1 + 480;
+    for (const x of [x1,x2]){
+      const bg = tctx.createRadialGradient(x,bd.y,1, x,bd.y,12);
+      bg.addColorStop(0,"rgba(160,160,160,0.85)");
+      bg.addColorStop(1,"rgba(0,0,0,0)");
+      tctx.fillStyle = bg; tctx.beginPath(); tctx.arc(x,bd.y,12,0,Math.PI*2); tctx.fill();
+    }
+  }
+  // Subtle ambient warmth on ground (grass slightly warmer than sky)
+  const gg = tctx.createLinearGradient(0,260,0,H);
+  gg.addColorStop(0,"rgba(40,40,40,0.5)"); gg.addColorStop(1,"rgba(60,60,60,0.4)");
+  tctx.fillStyle = gg; tctx.fillRect(0,260,W,H-260);
+}
+
+function drawUVLayer(time){
+  uctx.fillStyle = "rgba(0,0,0,0)";
+  uctx.clearRect(0,0,W,H);
+  // For each flower, draw concentric ring patterns (UV nectar guides) only visible to bees
+  for (const it of gardenItems){
+    if (it.kind !== "flower") continue;
+    const sway = Math.sin(time*0.0015 + it.x*0.02) * 2;
+    const cx = it.x + sway, cy = it.y;
+    const sz = it.size * it.uvScale;
+    // Bullseye rings: bright outer ring + dark inner cross
+    uctx.save();
+    uctx.translate(cx, cy);
+    // Outer star pattern
+    const arms = 8;
+    for (let i=0;i<arms;i++){
+      const a = (i/arms)*Math.PI*2;
+      uctx.beginPath();
+      uctx.moveTo(0,0);
+      uctx.lineTo(Math.cos(a)*sz*0.55, Math.sin(a)*sz*0.55);
+      uctx.strokeStyle = "rgba(255,255,255,0.85)";
+      uctx.lineWidth = 2.4;
+      uctx.stroke();
+    }
+    // Center dark dot
+    uctx.fillStyle = "rgba(255,255,255,0.95)";
+    uctx.beginPath(); uctx.arc(0,0, sz*0.16, 0, Math.PI*2); uctx.fill();
+    uctx.restore();
+  }
+}
+
+// ── Filters ─────────────────────────────────────────────
+// Each filter takes the work canvas image data and writes back transformed pixels.
+// Some filters use auxiliary data (warmth, UV).
+
+function getFrame(){ return wctx.getImageData(0,0,W,H); }
+function putFrame(d){ wctx.putImageData(d,0,0); }
+
+function f_human(){ /* identity */ }
+
+function f_cat(){
+  const im = getFrame(); const d = im.data;
+  // Approximate dichromatic blue–yellow projection (deuteranopia-like) + slight luminance boost
+  for (let i=0;i<d.length;i+=4){
+    const r=d[i], g=d[i+1], b=d[i+2];
+    const yellow = 0.5*r + 0.5*g;          // red & green collapse to yellow
+    let nr = yellow * 0.92;
+    let ng = yellow * 0.92;
+    let nb = b * 0.95 + (yellow - b) * 0.05;
+    // Low-light boost (cats see ~6× better in dim)
+    const lum = 0.299*nr + 0.587*ng + 0.114*nb;
+    const boost = (255 - lum) * 0.18;
+    nr = Math.min(255, nr + boost*0.95);
+    ng = Math.min(255, ng + boost);
+    nb = Math.min(255, nb + boost*0.9);
+    d[i]   = nr; d[i+1] = ng; d[i+2] = nb;
+  }
+  putFrame(im);
+}
+
+function f_dog(){
+  const im = getFrame(); const d = im.data;
+  for (let i=0;i<d.length;i+=4){
+    const r=d[i], g=d[i+1], b=d[i+2];
+    const yellow = 0.55*r + 0.45*g;
+    let nr = yellow * 0.88;
+    let ng = yellow * 0.88;
+    let nb = b * 0.92 + 6;
+    // Slightly less low-light boost than cat
+    const lum = 0.299*nr + 0.587*ng + 0.114*nb;
+    const boost = (255 - lum) * 0.12;
+    nr = Math.min(255, nr + boost*0.85);
+    ng = Math.min(255, ng + boost*0.95);
+    nb = Math.min(255, nb + boost);
+    d[i]=nr; d[i+1]=ng; d[i+2]=nb;
+  }
+  putFrame(im);
+}
+
+function f_bee(){
+  const im  = getFrame();  const d = im.data;
+  const uvi = uctx.getImageData(0,0,W,H).data;
+  // Bees: ~300–550 nm. They lose red, gain UV.
+  for (let i=0;i<d.length;i+=4){
+    const r=d[i], g=d[i+1], b=d[i+2];
+    // Red mostly drops out; green stays; blue + UV proxy boosted
+    let nr = r*0.18 + g*0.2 + b*0.15;
+    let ng = g*0.85 + b*0.25;
+    let nb = b*1.1  + (r*0.15);
+    // Add UV pattern from flower layer (white = UV-bright)
+    const u = uvi[i];
+    if (u > 5){
+      // UV mapped to violet (since we have to render it visibly)
+      const k = u/255;
+      nr = nr*(1-k) + 180*k;
+      ng = ng*(1-k) + 60*k;
+      nb = nb*(1-k) + 235*k;
+    }
+    d[i]   = Math.min(255, nr);
+    d[i+1] = Math.min(255, ng);
+    d[i+2] = Math.min(255, nb);
+  }
+  putFrame(im);
+}
+
+function f_bird(){
+  const im = getFrame(); const d = im.data;
+  // Tetrachromatic — saturated, slight UV-violet shimmer in blue-rich areas
+  for (let i=0;i<d.length;i+=4){
+    const r=d[i], g=d[i+1], b=d[i+2];
+    const mean = (r+g+b)/3;
+    // Boost saturation
+    let nr = mean + (r-mean)*1.45;
+    let ng = mean + (g-mean)*1.35;
+    let nb = mean + (b-mean)*1.5;
+    // UV shimmer in blue-dominant pixels
+    if (b > r && b > g){
+      const v = (b - Math.max(r,g)) / 255;
+      nr += v * 30;
+      nb += v * 15;
+    }
+    d[i]   = Math.max(0, Math.min(255, nr));
+    d[i+1] = Math.max(0, Math.min(255, ng));
+    d[i+2] = Math.max(0, Math.min(255, nb));
+  }
+  putFrame(im);
+  // Sharpening pass (unsharp mask, simple 3x3)
+  sharpenPass(0.35);
+}
+
+function f_snake(){
+  const im  = getFrame(); const d = im.data;
+  let warmAvail = false;
+  let warmData = null;
+  if (source === "sample"){
+    warmAvail = true;
+    warmData = tctx.getImageData(0,0,W,H).data;
+  }
+  for (let i=0;i<d.length;i+=4){
+    let t;
+    if (warmAvail){
+      // use the warmth layer red channel as temperature proxy
+      t = warmData[i] / 255;
+    } else {
+      // camera fallback: luminance as proxy (brighter = warmer-ish)
+      t = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]) / 255;
+      // make it a bit more contrasty
+      t = Math.pow(t, 1.5);
+    }
+    // dim base layer (cold pixels -> dark blue/black)
+    let baseLum = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]);
+    let coldR = baseLum * 0.05;
+    let coldG = baseLum * 0.05;
+    let coldB = 30 + baseLum * 0.18;
+    // hot palette
+    let hotR, hotG, hotB;
+    if (t < 0.33){
+      const k = t/0.33;
+      hotR = 60 + k*195; hotG = 0; hotB = 90 - k*60;
+    } else if (t < 0.66){
+      const k = (t-0.33)/0.33;
+      hotR = 255; hotG = k*200; hotB = 30*(1-k);
+    } else {
+      const k = (t-0.66)/0.34;
+      hotR = 255; hotG = 200 + k*55; hotB = k*220;
+    }
+    // blend: low t -> cold, high t -> hot
+    const w = Math.max(0, Math.min(1, (t - 0.18) * 1.6));
+    d[i]   = coldR*(1-w) + hotR*w;
+    d[i+1] = coldG*(1-w) + hotG*w;
+    d[i+2] = coldB*(1-w) + hotB*w;
+  }
+  putFrame(im);
+}
+
+function f_fly(){
+  // Hexagonal compound-eye mosaic
+  // Sample the work canvas at hex centers, then paint hex cells.
+  const im = wctx.getImageData(0,0,W,H);
+  const d  = im.data;
+  // Working buffer for output
+  const out = wctx.createImageData(W,H);
+  const od = out.data;
+  // Fill with dark base
+  for (let i=0;i<od.length;i+=4){ od[i]=10; od[i+1]=14; od[i+2]=20; od[i+3]=255; }
+
+  const hexR = 11; // hex circumradius
+  const dx   = hexR * Math.sqrt(3);
+  const dy   = hexR * 1.5;
+  // Iterate hex centers
+  for (let row=-1; row*dy<H+dy; row++){
+    for (let col=-1; col*dx<W+dx; col++){
+      const cx = col*dx + (row%2 === 0 ? 0 : dx/2);
+      const cy = row*dy;
+      // Sample center pixel
+      const sx = Math.max(0, Math.min(W-1, Math.floor(cx)));
+      const sy = Math.max(0, Math.min(H-1, Math.floor(cy)));
+      const si = (sy*W + sx)*4;
+      const r = d[si], g = d[si+1], b = d[si+2];
+      // Paint a filled hex centered at (cx,cy)
+      paintHex(od, cx, cy, hexR-1.4, r,g,b);
+    }
+  }
+  wctx.putImageData(out,0,0);
+}
+function paintHex(od, cx, cy, r, R,G,B){
+  // axis-aligned bounding box
+  const minX = Math.max(0, Math.floor(cx - r));
+  const maxX = Math.min(W-1, Math.ceil(cx + r));
+  const minY = Math.max(0, Math.floor(cy - r));
+  const maxY = Math.min(H-1, Math.ceil(cy + r));
+  // hexagon mask with flat-top? Use pointy-top: points at sides.
+  // For pointy-top: half-width = r*sqrt(3)/2; half-height = r
+  const hw = r * Math.sqrt(3)/2;
+  for (let y=minY; y<=maxY; y++){
+    const dyP = y - cy;
+    if (Math.abs(dyP) > r) continue;
+    // x range bounded by hex shape
+    let limX = hw * (r - Math.abs(dyP)) / r + hw * (Math.abs(dyP) <= r/2 ? 1 : 0);
+    // Simple inradius approximation via hex equation:
+    // |y/r| <= 1, |x/hw| + max(0, (|y|/r - 0.5))*2 <= 1
+    const yt = Math.abs(dyP)/r;
+    const xLim = hw * (1 - Math.max(0, (yt - 0.5)) * 2);
+    for (let x=minX; x<=maxX; x++){
+      const dxP = x - cx;
+      if (Math.abs(dxP) <= xLim){
+        const i = (y*W + x)*4;
+        od[i]=R; od[i+1]=G; od[i+2]=B; od[i+3]=255;
+      }
+    }
+  }
+}
+
+function f_owl(){
+  const im = getFrame(); const d = im.data;
+  for (let i=0;i<d.length;i+=4){
+    const r=d[i], g=d[i+1], b=d[i+2];
+    const lum = 0.299*r + 0.587*g + 0.114*b;
+    // Massive low-light boost
+    const boosted = Math.pow(lum/255, 0.55) * 255;
+    // Slightly desaturated, faint warm tint
+    d[i]   = Math.min(255, boosted * 1.0);
+    d[i+1] = Math.min(255, boosted * 0.96);
+    d[i+2] = Math.min(255, boosted * 0.85);
+  }
+  putFrame(im);
+  // Soft blur (motion blur in low light)
+  blurPass(1);
+}
+
+// Simple sharpen / blur (small kernels; CPU-cheap)
+function sharpenPass(amt){
+  const src = wctx.getImageData(0,0,W,H);
+  const sd  = src.data;
+  const out = wctx.createImageData(W,H);
+  const od  = out.data;
+  const k   = amt;
+  for (let y=1;y<H-1;y++){
+    for (let x=1;x<W-1;x++){
+      const i = (y*W + x)*4;
+      for (let c=0;c<3;c++){
+        const v = sd[i+c];
+        const n = sd[i-W*4+c] + sd[i+W*4+c] + sd[i-4+c] + sd[i+4+c];
+        const sharp = v + (v*4 - n) * k * 0.25;
+        od[i+c] = Math.max(0, Math.min(255, sharp));
+      }
+      od[i+3] = 255;
+    }
+  }
+  wctx.putImageData(out,0,0);
+}
+function blurPass(k){
+  const src = wctx.getImageData(0,0,W,H);
+  const sd  = src.data;
+  const out = wctx.createImageData(W,H);
+  const od  = out.data;
+  for (let y=1;y<H-1;y++){
+    for (let x=1;x<W-1;x++){
+      const i = (y*W + x)*4;
+      for (let c=0;c<3;c++){
+        const v = (sd[i+c]*4 + sd[i-W*4+c] + sd[i+W*4+c] + sd[i-4+c] + sd[i+4+c]) / 8;
+        od[i+c] = v;
+      }
+      od[i+3] = 255;
+    }
+  }
+  wctx.putImageData(out,0,0);
+}
+
+const FILTERS = {
+  a_human: f_human, a_cat: f_cat, a_dog: f_dog,
+  a_bee: f_bee, a_bird: f_bird, a_snake: f_snake,
+  a_fly: f_fly, a_owl: f_owl
+};
+
+// ── Main render loop ───────────────────────────────────
+function render(time){
+  // 1) Source → work canvas
+  if (source === "sample"){
+    drawSampleScene(time);
+    drawWarmthLayer(time);
+    drawUVLayer(time);
+    wctx.drawImage(scene, 0, 0, W, H);
+  } else if (source === "camera" && stream){
+    if (video.readyState >= 2){
+      // Draw video centered/cropped to W×H
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (vw && vh){
+        const ar = W/H;
+        let sw = vw, sh = vh;
+        if (vw/vh > ar){ sw = vh*ar; }
+        else { sh = vw/ar; }
+        const sxv = (vw - sw)/2, syv = (vh - sh)/2;
+        wctx.drawImage(video, sxv, syv, sw, sh, 0, 0, W, H);
+      }
+    } else {
+      wctx.fillStyle = "#000"; wctx.fillRect(0,0,W,H);
+    }
+  } else {
+    wctx.fillStyle = "#000"; wctx.fillRect(0,0,W,H);
+  }
+
+  // 2) Render display (with optional split-compare)
+  fitDisplay();
+  if (compare){
+    // Left half: human (work canvas as-is), Right half: filtered
+    // Save raw frame
+    const raw = wctx.getImageData(0,0,W,H);
+    // Apply filter to work canvas
+    if (current !== "a_human") FILTERS[current]();
+    const filtered = wctx.getImageData(0,0,W,H);
+    // Composite: left half raw, right half filtered
+    const mixed = wctx.createImageData(W,H);
+    for (let y=0;y<H;y++){
+      for (let x=0;x<W;x++){
+        const i = (y*W + x)*4;
+        const src = (x < W/2) ? raw.data : filtered.data;
+        mixed.data[i]   = src[i];
+        mixed.data[i+1] = src[i+1];
+        mixed.data[i+2] = src[i+2];
+        mixed.data[i+3] = 255;
+      }
+    }
+    wctx.putImageData(mixed,0,0);
+  } else {
+    if (current !== "a_human") FILTERS[current]();
+  }
+
+  // 3) Stretch work canvas to display
+  dctx.imageSmoothingEnabled = (current !== "a_fly");
+  dctx.drawImage(work, 0, 0, display.width, display.height);
+
+  rafId = requestAnimationFrame(render);
+}
+
+// ── Source switching ───────────────────────────────────
+const camPrompt = document.getElementById("camPrompt");
+const btnSample = document.getElementById("srcSample");
+const btnCamera = document.getElementById("srcCamera");
+const btnCmp    = document.getElementById("cmpToggle");
+
+btnSample.addEventListener("click", () => {
+  source = "sample";
+  btnSample.classList.add("on");
+  btnCamera.classList.remove("on");
+  stopCamera();
+  camPrompt.classList.remove("show");
+});
+btnCamera.addEventListener("click", () => {
+  if (stream){
+    source = "camera";
+    btnSample.classList.remove("on");
+    btnCamera.classList.add("on");
+  } else {
+    camPrompt.classList.add("show");
+  }
+});
+document.getElementById("camStart").addEventListener("click", async () => {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    video.srcObject = stream;
+    await video.play();
+    source = "camera";
+    btnSample.classList.remove("on");
+    btnCamera.classList.add("on");
+    camPrompt.classList.remove("show");
+  } catch(e){
+    alert(lang === "ja"
+      ? "カメラを ひらけませんでした。サンプルで あそべます。"
+      : "Couldn't open the camera. You can still use the garden scene.");
+    camPrompt.classList.remove("show");
+  }
+});
+document.getElementById("camCancel").addEventListener("click", () => {
+  camPrompt.classList.remove("show");
+});
+function stopCamera(){
+  if (stream){
+    for (const t of stream.getTracks()) t.stop();
+    stream = null; video.srcObject = null;
+  }
+}
+
+btnCmp.addEventListener("click", () => {
+  compare = !compare;
+  btnCmp.classList.toggle("on", compare);
+  document.getElementById("stage").classList.toggle("compare", compare);
+});
+
+// ── Init ───────────────────────────────────────────────
+applyLang();
+fitDisplay();
+rafId = requestAnimationFrame(render);
+</script>
+
+</body>
+</html>
